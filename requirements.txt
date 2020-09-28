@@ -1,0 +1,10 @@
+pybullet
+numpy
+matplotlib==3.2.1
+pandas==1.0.5
+seaborn==0.10.1
+pyglet==1.3.2
+plotly==4.5.0
+torch==1.6.0
+tqdm==4.43.0
+pillow==7.0.0

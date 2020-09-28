@@ -1,0 +1,12 @@
+# FERL_sim
+
+## Dependencies
+
+Python dependencies are in `requirements.txt`.
+
+## Simulation
+
+In a terminal window, run the script:
+```
+python study.py
+```
