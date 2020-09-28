@@ -8,5 +8,5 @@ Python dependencies are in `requirements.txt`.
 
 In a terminal window, run the script:
 ```
-python study.py
+python study.py --feature [feature_name]
 ```
