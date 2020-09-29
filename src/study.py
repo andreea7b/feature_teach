@@ -41,6 +41,50 @@ def parse_arguments():
     return args
 
 
+def topview1():
+    p.resetDebugVisualizerCamera(cameraDistance=2, cameraYaw=-89.9, cameraPitch=-89.9,
+                                 cameraTargetPosition=[0.0,0.0,0.0])
+
+def topview2():
+    p.resetDebugVisualizerCamera(cameraDistance=2.1, cameraYaw=-173.43, cameraPitch=-72.72,
+                                 cameraTargetPosition=[-0.2,0,0.2])
+
+def sideview():
+    view = np.random.choice(np.arange(4), 1)
+    if view == 0:
+        p.resetDebugVisualizerCamera(cameraDistance=2, cameraYaw=-270,
+                                 cameraPitch=-15,
+                                 cameraTargetPosition=[0,0,0.5])
+    elif view == 1:
+        p.resetDebugVisualizerCamera(cameraDistance=1.6, cameraYaw=-340,
+                                 cameraPitch=-15,
+                                 cameraTargetPosition=[0,0,0.5])
+    elif view == 2:
+        p.resetDebugVisualizerCamera(cameraDistance=1.7, cameraYaw=-225,
+                                 cameraPitch=-7,
+                                 cameraTargetPosition=[0,0,0.5])
+    elif view == 3:
+        p.resetDebugVisualizerCamera(cameraDistance=1.7, cameraYaw=-385,
+                                 cameraPitch=-15,
+                                 cameraTargetPosition=[0,0,0.5])
+
+
+def replay_trace(trace, objectID):
+    for waypt in trace:
+        for jointIndex in range(p.getNumJoints(objectID["robot"])):
+            p.resetJointState(objectID["robot"], jointIndex, waypt[jointIndex])
+        time.sleep(0.01)
+
+def next_trace(feature, objectID):
+    move_robot(objectID["robot"])
+    if feature in ["laptop"]:
+        topview1()
+    elif feature in ["table"]:
+        sideview()
+    elif feature in ["human", "proxemics"]:
+        topview2()
+
+
 if __name__ == "__main__":
     # Parse experimental arguments.
     args = parse_arguments()
@@ -88,7 +132,15 @@ if __name__ == "__main__":
     end_labels = [0.0] * N_QUERIES
     queries = 0
     record = False
-    print("Attempting trace #{}. Please place the robot's end-effector in a highly-expressed feature region. Explore the world, use given camera views if needed, and when ready press Start Recording.".format(queries+1))
+    print("Attempting trace #{}. Please place the robot's end-effector in a highly-expressed feature region, and when ready press Start Recording.".format(queries+1))
+
+    if args.feature in ["laptop"]:
+        topview1()
+    elif args.feature in ["table"]:
+        sideview()
+    elif args.feature in ["human", "proxemics"]:
+        topview2()
+
     while(queries < N_QUERIES):
         recordPushes = p.readUserDebugParameter(recordButton)
         stopPushes = p.readUserDebugParameter(stopButton)
@@ -103,23 +155,17 @@ if __name__ == "__main__":
         if top1Pushes > top1Num:
             print("Changing the view to top-down #1.")
             top1Num = top1Pushes
-            p.resetDebugVisualizerCamera(cameraDistance=2, cameraYaw=-89.9,
-                                         cameraPitch=-89.9,
-                                         cameraTargetPosition=[0.0,0.0,0.0])
+            topview1()
 
         if top2Pushes > top2Num:
             print("Changing the view to top-down #2.")
             top2Num = top2Pushes
-            p.resetDebugVisualizerCamera(cameraDistance=2.3, cameraYaw=-179.9,
-                                         cameraPitch=-89.9,
-                                         cameraTargetPosition=[-0.2,0,0.2])
+            topview2()
 
         if sidePushes > sideNum:
             print("Changing the view to side.")
             sideNum = sidePushes
-            p.resetDebugVisualizerCamera(cameraDistance=2, cameraYaw=-270,
-                                         cameraPitch=-15,
-                                         cameraTargetPosition=[0,0,0.15])
+            sideview()
 
         if labelPushes > labelNum:
             labelNum = labelPushes
@@ -136,52 +182,52 @@ if __name__ == "__main__":
                 print("No saved traces to label yet.")
 
         if nextPushes > nextNum:
-            print("Attempting trace #{}. Please place the robot's end-effector in a highly-expressed feature region. Explore the world, use given camera views if needed, and when ready press Start Recording.".format(queries+1))
+            print("Attempting trace #{}. Please place the robot's end-effector in a highly-expressed feature region, and when ready press Start Recording.".format(queries+1))
             nextNum = nextPushes
             trace = []
-            move_robot(objectID["robot"])
+            next_trace(args.feature, objectID)
 
         if savePushes > saveNum:
             saveNum = savePushes
             if record == False:
-                # Pre-process the recorded data before training.
-                trace = np.squeeze(np.array(trace))
-                lo = 0
-                hi = trace.shape[0] - 1
-                while np.linalg.norm(trace[lo] - trace[lo + 1]) < 0.01 and lo < hi:
-                    lo += 1
-                while np.linalg.norm(trace[hi] - trace[hi - 1]) < 0.01 and hi > 0:
-                    hi -= 1
-                trace = trace[lo:hi+1, :]
+                if len(trace) > 0:
+                    raw_trace = []
+                    for waypt in trace:
+                        raw_trace.append(raw_features(objectID, waypt))
 
-                raw_trace = []
-                for waypt in trace:
-                    raw_trace.append(raw_features(objectID, waypt))
-
-                # Save trace.
-                raw_trace.reverse()
-                traces.append(np.array(raw_trace))
-                print("Saved a trace of length {}.".format(len(raw_trace)))
-                trace = []
-                queries += 1
+                    # Save trace.
+                    raw_trace.reverse()
+                    traces.append(np.array(raw_trace))
+                    print("Saved a trace of length {}.".format(len(raw_trace)))
+                    queries += 1
+                    trace = []
+                    next_trace(args.feature, objectID)
             else:
                 print("Can't save while recording! Please stop the recording first.")
 
         if replayPushes > replayNum:
-            print("Replaying trace. Feel free to change the view and replay the trace again using the Replay Trace button. If happy with the recording, press Save Trace; otherwise press Next Trace.")
+            print("Replaying trace. If happy with the recording, press Save Trace; otherwise press Next Trace.")
             replayNum = replayPushes
-            for waypt in trace:
-                for jointIndex in range(p.getNumJoints(objectID["robot"])):
-                    p.resetJointState(objectID["robot"], jointIndex, waypt[jointIndex])
-                time.sleep(0.01)
+            replay_trace(trace, objectID)
 
         if stopPushes > stopNum:
-            print("Stopping trace recording. Feel free to change the view and replay the trace using the Replay Trace button. If happy with the recording, press Save Trace; otherwise press Next Trace.")
+            print("Stopping trace recording. If happy with the recording, press Save Trace; otherwise press Next Trace.")
             stopNum = stopPushes
             record = False
 
+            # Pre-process the recorded data.
+            trace = np.squeeze(np.array(trace))
+            lo = 0
+            hi = trace.shape[0] - 1
+            while np.linalg.norm(trace[lo] - trace[lo + 1]) < 0.01 and lo < hi:
+                lo += 1
+            while np.linalg.norm(trace[hi] - trace[hi - 1]) < 0.01 and hi > 0:
+                hi -= 1
+            trace = trace[lo:hi+1, :]
+            replay_trace(trace, objectID)
+
         if recordPushes > recordNum:
-            print("Starting trace #{} recording. Please place the robot's end-effector in a lowly-expressed feature region. Explore the world, use given camera views if needed, and when done press Stop Recording.".format(queries+1))
+            print("Starting trace #{} recording. Please place the robot's end-effector in a lowly-expressed feature region, and when done press Stop Recording.".format(queries+1))
             recordNum = recordPushes
             record = True
 
@@ -209,8 +255,17 @@ if __name__ == "__main__":
     all_trace_data = np.empty((0, 97), float)
     for idx in range(len(traces)):
         np.flip(traces[idx],axis=0)
-        unknown_feature.add_data(traces[idx])
-        all_trace_data = np.vstack((all_trace_data, traces[idx]))
+        trace = traces[idx]
+
+        # Downsample for faster training if needed.
+        if(trace.shape[0] > 100):
+            idxes = np.random.choice(np.arange(trace.shape[0]), 100, replace=False)
+            idxes = np.sort(idxes)
+            idxes[0] = 0
+            idxes[-1] = trace.shape[0] - 1
+            trace = trace[idxes]
+        unknown_feature.add_data(trace)
+        all_trace_data = np.vstack((all_trace_data, trace))
 
     _ = unknown_feature.train(epochs=100, batch_size=32, learning_rate=1e-3, weight_decay=0.001, s_g_weight=10.)
     torch.save(unknown_feature, '{}/{}.pt'.format(args.save_dir, args.feature))
