@@ -281,8 +281,8 @@ if __name__ == "__main__":
         trace = traces[idx]
 
         # Downsample for faster training if needed.
-        if(trace.shape[0] > 80):
-            idxes = np.random.choice(np.arange(trace.shape[0]), 100, replace=False)
+        if(trace.shape[0] > 50):
+            idxes = np.random.choice(np.arange(trace.shape[0]), 50, replace=False)
             idxes = np.sort(idxes)
             idxes[0] = 0
             idxes[-1] = trace.shape[0] - 1
