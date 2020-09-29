@@ -55,8 +55,8 @@ if __name__ == "__main__":
     features = ["table", "laptop", "proxemics"]
     for feature in features:
         print("Visualizing {} feature.".format(feature))
-        traces = pickle.load(open("{}/{}.p".format(args.data_dir, feature), "rb" ) )
-        model = torch.load("{}/{}.pt".format(args.data_dir, feature))
+        traces = pickle.load(open("{}/{}_1.p".format(args.data_dir, feature), "rb" ) )
+        model = torch.load("{}/{}_1.pt".format(args.data_dir, feature))
         viz_gt_feature("../", feature, objectID)
         print("Press ENTER when you're done visualizing the ground truth feature.")
         input()

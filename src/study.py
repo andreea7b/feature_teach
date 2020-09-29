@@ -84,13 +84,12 @@ def next_trace(feature, objectID):
     elif feature in ["human", "proxemics"]:
         topview2()
 
-
-if __name__ == "__main__":
-    # Parse experimental arguments.
-    args = parse_arguments()
-
+def envsetup(args, direct=False):
     # Connect to physics simulator.
-    physicsClient = p.connect(p.GUI) #or p.DIRECT for non-graphical version
+    if direct:
+        physicsClient = p.connect(p.DIRECT)
+    else:
+        physicsClient = p.connect(p.GUI)
 
     # Add path to data resources for the environment.
     p.setAdditionalSearchPath(args.resources_dir)
@@ -101,6 +100,24 @@ if __name__ == "__main__":
     # Get rid of gravity and make simulation happen in real time.
     p.setGravity(0, 0, 0)
     p.setRealTimeSimulation(1)
+
+    return objectID
+
+
+if __name__ == "__main__":
+    # Parse experimental arguments.
+    args = parse_arguments()
+
+    # Visualize ground truth feature.
+    objectID = envsetup(args, direct=True)
+    viz_gt_feature("../", args.feature, objectID)
+    p.disconnect()
+
+    print("Press ENTER when done visualizing.")
+    input()
+
+    # Start GUI
+    objectID = envsetup(args)
 
     # Collect data.
     recordButton = p.addUserDebugParameter("Start Recording", 1, 0, 0)
@@ -122,10 +139,11 @@ if __name__ == "__main__":
     top2Num = 0
     sideNum = 0
 
-    # Visualize ground truth feature.
-    viz_gt_feature("../", args.feature, objectID)
+    if args.feature in ["human"]:
+        N_QUERIES = 5
+    else:
+        N_QUERIES = 10
 
-    N_QUERIES = 10
     trace = []
     traces = []
     start_labels = [1.0] * N_QUERIES
@@ -239,7 +257,12 @@ if __name__ == "__main__":
         time.sleep(0.01)
 
     # Save collected traces.
-    filename = args.save_dir + "{}.p".format(args.feature)
+    i = 1
+    filename = args.save_dir + "{}_{}.p".format(args.feature, i)
+    while os.path.exists(filename):
+        i+=1
+        filename = args.save_dir + "{}_{}.p".format(args.feature, i)
+
     with open(filename, 'wb') as handle:
         pickle.dump(traces, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -258,7 +281,7 @@ if __name__ == "__main__":
         trace = traces[idx]
 
         # Downsample for faster training if needed.
-        if(trace.shape[0] > 100):
+        if(trace.shape[0] > 80):
             idxes = np.random.choice(np.arange(trace.shape[0]), 100, replace=False)
             idxes = np.sort(idxes)
             idxes[0] = 0
@@ -268,4 +291,16 @@ if __name__ == "__main__":
         all_trace_data = np.vstack((all_trace_data, trace))
 
     _ = unknown_feature.train(epochs=100, batch_size=32, learning_rate=1e-3, weight_decay=0.001, s_g_weight=10.)
-    torch.save(unknown_feature, '{}/{}.pt'.format(args.save_dir, args.feature))
+    i = 1
+    filename = "{}/{}_{}.pt".format(args.save_dir, args.feature, i)
+    while os.path.exists(filename):
+        i+=1
+        filename = "{}/{}_{}.pt".format(args.save_dir, args.feature, i)
+    torch.save(unknown_feature, filename)
+
+    if(args.feature in ["human"]):
+        # Visualize ground truth feature.
+        objectID = envsetup(args, direct=True)
+        viz_learned_feat("../", args.feature, objectID, traces, unknown_feature)
+        p.disconnect()
+
