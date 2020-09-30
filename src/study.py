@@ -293,7 +293,7 @@ if __name__ == "__main__":
             idxes = np.sort(idxes)
             idxes[0] = 0
             idxes[-1] = trace.shape[0] - 1
-
+            trace = trace[idxes]
         unknown_feature.add_data(trace)
         all_trace_data = np.vstack((all_trace_data, trace))
 
