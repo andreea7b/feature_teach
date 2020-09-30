@@ -84,7 +84,7 @@ def laptop_features(objectID, waypt):
 	EE_coord_xy = coords[6][0:2]
 	posL, _ = p.getBasePositionAndOrientation(objectID["laptop"])
 	laptop_xy = posL[0:2]
-	dist = np.linalg.norm(EE_coord_xy - laptop_xy) - 0.3
+	dist = np.linalg.norm(EE_coord_xy - laptop_xy) - 0.4
 	if dist > 0:
 		return 0
 	return -dist
@@ -110,7 +110,7 @@ def human_features(objectID, waypt):
 	EE_coord_xy = coords[6][0:2]
 	posH, _ = p.getBasePositionAndOrientation(objectID["human"])
 	human_xy = posH[0:2]
-	dist = np.linalg.norm(EE_coord_xy - human_xy) - 0.3
+	dist = np.linalg.norm(EE_coord_xy - human_xy) - 0.4
 	if dist > 0:
 		return 0
 	return -dist
@@ -140,7 +140,7 @@ def proxemics_features(objectID, waypt):
 	# Modify ellipsis distance.
 	EE_coord_xy[1] /= 3
 	human_xy[1] /= 3
-	dist = np.linalg.norm(EE_coord_xy - human_xy) - 0.3
+	dist = np.linalg.norm(EE_coord_xy - human_xy) - 0.4
 	if dist > 0:
 		return 0
 	return -dist

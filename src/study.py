@@ -233,18 +233,21 @@ if __name__ == "__main__":
         if stopPushes > stopNum:
             print("Stopping trace recording. If happy with the recording, press Save Trace; otherwise press Next Trace.")
             stopNum = stopPushes
-            record = False
+            if record == True:
+                record = False
 
-            # Pre-process the recorded data.
-            trace = np.squeeze(np.array(trace))
-            lo = 0
-            hi = trace.shape[0] - 1
-            while np.linalg.norm(trace[lo] - trace[lo + 1]) < 0.01 and lo < hi:
-                lo += 1
-            while np.linalg.norm(trace[hi] - trace[hi - 1]) < 0.01 and hi > 0:
-                hi -= 1
-            trace = trace[lo:hi+1, :]
-            replay_trace(trace, objectID)
+                # Pre-process the recorded data.
+                trace = np.squeeze(np.array(trace))
+                lo = 0
+                hi = trace.shape[0] - 1
+                while np.linalg.norm(trace[lo] - trace[lo + 1]) < 0.01 and lo < hi:
+                    lo += 1
+                while np.linalg.norm(trace[hi] - trace[hi - 1]) < 0.01 and hi > 0:
+                    hi -= 1
+                trace = trace[lo:hi+1, :]
+                replay_trace(trace, objectID)
+            else:
+                print("Can't stop a recording that hasn't started yet.")
 
         if recordPushes > recordNum:
             print("Starting trace #{} recording. Please place the robot's end-effector in a lowly-expressed feature region, and when done press Stop Recording.".format(queries+1))
@@ -278,16 +281,19 @@ if __name__ == "__main__":
     unknown_feature = LearnedFeature(2, 64, LF_dict)
 
     all_trace_data = np.empty((0, 97), float)
+
+    # settings
+    n_target = 50
+
     for idx in range(len(traces)):
         trace = traces[idx]
-
         # Downsample for faster training if needed.
-        if(trace.shape[0] > 50):
-            idxes = np.random.choice(np.arange(trace.shape[0]), 50, replace=False)
+        if (trace.shape[0] > n_target):
+            idxes = np.random.choice(np.arange(trace.shape[0]), n_target, replace=False)
             idxes = np.sort(idxes)
             idxes[0] = 0
             idxes[-1] = trace.shape[0] - 1
-            trace = trace[idxes]
+
         unknown_feature.add_data(trace)
         all_trace_data = np.vstack((all_trace_data, trace))
 
