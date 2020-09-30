@@ -76,6 +76,7 @@ def replay_trace(trace, objectID):
         time.sleep(0.01)
 
 def next_trace(feature, objectID):
+    print("Attempting trace #{}. Please place the robot's end-effector in a highly-expressed feature region, and when ready press Start Recording.".format(queries+1))
     move_robot(objectID["robot"])
     if feature in ["laptop"]:
         topview1()
@@ -139,13 +140,9 @@ if __name__ == "__main__":
     top2Num = 0
     sideNum = 0
 
-    if args.feature in ["human"]:
-        N_QUERIES = 5
-    else:
-        N_QUERIES = 10
-
     trace = []
     traces = []
+    N_QUERIES = 10
     start_labels = [1.0] * N_QUERIES
     end_labels = [0.0] * N_QUERIES
     queries = 0
@@ -200,10 +197,12 @@ if __name__ == "__main__":
                 print("No saved traces to label yet.")
 
         if nextPushes > nextNum:
-            print("Attempting trace #{}. Please place the robot's end-effector in a highly-expressed feature region, and when ready press Start Recording.".format(queries+1))
             nextNum = nextPushes
-            trace = []
-            next_trace(args.feature, objectID)
+            if record == False:
+                trace = []
+                next_trace(args.feature, objectID)
+            else:
+                print("Please stop the recording first!")
 
         if savePushes > saveNum:
             saveNum = savePushes
@@ -224,9 +223,12 @@ if __name__ == "__main__":
                 print("Can't save while recording! Please stop the recording first.")
 
         if replayPushes > replayNum:
-            print("Replaying trace. If happy with the recording, press Save Trace; otherwise press Next Trace.")
             replayNum = replayPushes
-            replay_trace(trace, objectID)
+            if record == False:
+                print("Replaying trace. If happy with the recording, press Save Trace; otherwise press Next Trace.")
+                replay_trace(trace, objectID)
+            else:
+                print("Can't replay while recording. Please stop the recording first.")
 
         if stopPushes > stopNum:
             print("Stopping trace recording. If happy with the recording, press Save Trace; otherwise press Next Trace.")
@@ -277,7 +279,6 @@ if __name__ == "__main__":
 
     all_trace_data = np.empty((0, 97), float)
     for idx in range(len(traces)):
-        np.flip(traces[idx],axis=0)
         trace = traces[idx]
 
         # Downsample for faster training if needed.
