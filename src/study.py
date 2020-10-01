@@ -256,10 +256,11 @@ if __name__ == "__main__":
         if recordPushes > recordNum:
             print("Starting trace #{} recording. Please place the robot's end-effector in a lowly-expressed feature region, and when done press Stop Recording.".format(queries+1))
             recordNum = recordPushes
-            if record == False:
-                record = True
-            else:
+            if(trace.shape[0] > 0):
                 print ("Cannot record until you Save Trace or hit Next Trace.")
+                record = False
+            else:
+                record = True
 
         if record:
             state = p.getJointStates(objectID["robot"], range(p.getNumJoints(objectID["robot"])))
