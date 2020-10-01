@@ -71,6 +71,8 @@ def raw_features(objectID, waypt):
     Returns:
         raw_features -- list of raw feature values
     """
+    if len(waypt) < 11:
+        waypt = np.append(np.append(np.array([0]), waypt.reshape(7)), np.array([0,0,0]))
     # Get relevant objects in the environment.
     posH, _ = p.getBasePositionAndOrientation(objectID["human"])
     posL, _ = p.getBasePositionAndOrientation(objectID["laptop"])
@@ -83,4 +85,27 @@ def raw_features(objectID, waypt):
     coords = robot_coords(objectID["robot"])
     orientations = robot_orientations(objectID["robot"])
     return np.reshape(np.concatenate((waypt[1:8], orientations.flatten(), coords.flatten(), object_coords.flatten())), (-1,))
+
+
+def upsample(trace, num_waypts, objectID):
+    if trace.shape[0] >= num_waypts:
+        return trace
+    trace = trace[:,:7]
+    timestep = 1.0 / (trace.shape[0] - 1)
+    timestep_up = 1.0 / (num_waypts - 1)
+    t = 0
+    trace_up = np.zeros((num_waypts,7))
+    for i in range(num_waypts):
+        if t >= 1:
+            trace_up[i] = trace[-1]
+        else:
+            curr_idx = int(t / timestep)
+            curr_waypt = trace[curr_idx]
+            next_waypt = trace[curr_idx + 1]
+            trace_up[i] = curr_waypt + ((t - curr_idx * timestep) / timestep) * (next_waypt - curr_waypt)
+        t += timestep_up
+    raw_trace = []
+    for waypt in trace_up:
+        raw_trace.append(raw_features(objectID, waypt))
+    return np.array(raw_trace)
 

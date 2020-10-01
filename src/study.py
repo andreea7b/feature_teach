@@ -256,7 +256,10 @@ if __name__ == "__main__":
         if recordPushes > recordNum:
             print("Starting trace #{} recording. Please place the robot's end-effector in a lowly-expressed feature region, and when done press Stop Recording.".format(queries+1))
             recordNum = recordPushes
-            record = True
+            if record == False:
+                record = True
+            else:
+                print ("Cannot record until you Save Trace or hit Next Trace.")
 
         if record:
             state = p.getJointStates(objectID["robot"], range(p.getNumJoints(objectID["robot"])))
@@ -288,6 +291,7 @@ if __name__ == "__main__":
 
     # settings
     n_target = 50
+    objectID = envsetup(args, direct=True)
 
     for idx in range(len(traces)):
         trace = traces[idx]
@@ -298,6 +302,8 @@ if __name__ == "__main__":
             idxes[0] = 0
             idxes[-1] = trace.shape[0] - 1
             trace = trace[idxes]
+        else:
+            trace = upsample(trace, n_target, objectID)
         unknown_feature.add_data(trace)
         all_trace_data = np.vstack((all_trace_data, trace))
 
@@ -311,7 +317,6 @@ if __name__ == "__main__":
 
     if(args.feature in ["human"]):
         # Visualize ground truth feature.
-        objectID = envsetup(args, direct=True)
         viz_learned_feat("../", args.feature, objectID, traces, unknown_feature)
         p.disconnect()
 
