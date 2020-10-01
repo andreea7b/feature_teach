@@ -236,6 +236,10 @@ if __name__ == "__main__":
             if record == True:
                 record = False
 
+                if len(trace) == 0:
+                    print("Didn't record any data!")
+                    continue
+
                 # Pre-process the recorded data.
                 trace = np.squeeze(np.array(trace))
                 lo = 0
