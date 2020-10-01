@@ -236,7 +236,7 @@ if __name__ == "__main__":
             if record == True:
                 record = False
 
-                if len(trace) == 0:
+                if len(trace) <= 1:
                     print("Didn't record any data!")
                     continue
 
